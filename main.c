@@ -16,7 +16,7 @@ void b_write(Adress adr, byte b);
 byte b_read(Adress adr);
 void word_write(Adress adr, word w);
 word word_read(Adress adr);
-
+void load_file(const char * filename);
 
 
 
@@ -49,8 +49,12 @@ void test_mem() {
     assert(wres == m);
 }
 
-int main() {
-    test_mem();
+int main(int argc, char * argv[]) {
+    
+    if (argc == 2) {
+        load_file(argv[1]);
+    }
+//    test_mem();
     return 0;
 }
 
@@ -79,4 +83,22 @@ void word_write(Adress adr, word w)
 {
     mem[adr+1] = (byte) (w >> 8);
     mem[adr] = (byte) (w);
+}
+
+void load_file(const char * filename) {
+    
+    
+    int adress;
+    Adress adr;
+    byte a;
+    int n;
+    FILE *data;
+    data = fopen(filename, "r");
+    fscanf(data,"%d %d", &adress, &n);
+    adr = (Adress) adress;
+    for (Adress i = 0; i < n; i++){
+        fscanf(data, "%hhx", &a);
+        b_write(adr+i, a);
+    }
+
 }

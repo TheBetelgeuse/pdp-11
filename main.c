@@ -1,27 +1,27 @@
 #include <stdio.h>
 #include <assert.h>
-
-typedef unsigned char byte;                     //8 bit
-typedef unsigned short int word;                //16 bit
-typedef word Adress;                            //16 bit
-
-
+#include <stdlib.h>
+#include "pdp-11.h"
+#include "do_func.c"
 
 #define MEMSIZE (64*1024)
+#define pc reg[7]
+
 
 
 byte mem[MEMSIZE];
-
-void b_write(Adress adr, byte b);
-byte b_read(Adress adr);
-void word_write(Adress adr, word w);
-word word_read(Adress adr);
-void load_file(const char * filename);
+word reg[8];
 
 
 
 
 
+
+//void trace(char * format, ...) {
+//    if (trace_flag){
+//        va_list ptr;
+//    }
+//}
 void test_mem() {
     printf("%s", "\nTesting b_write\n");
     byte b0 = 0x0a;
@@ -49,14 +49,6 @@ void test_mem() {
     assert(wres == m);
 }
 
-int main(int argc, char * argv[]) {
-    
-    if (argc == 2) {
-        load_file(argv[1]);
-    }
-//    test_mem();
-    return 0;
-}
 
 void b_write(Adress adr, byte b) {
     
@@ -85,20 +77,49 @@ void word_write(Adress adr, word w)
     mem[adr] = (byte) (w);
 }
 
+
 void load_file(const char * filename) {
     
     
-    int adress;
-    Adress adr;
+    int adress, num;
+    Adress adr, n;
     byte a;
-    int n;
     FILE *data;
     data = fopen(filename, "r");
-    fscanf(data,"%d %d", &adress, &n);
+    fscanf(data,"%d %d", &adress, &num);
     adr = (Adress) adress;
+    n = (Adress) num;
     for (Adress i = 0; i < n; i++){
         fscanf(data, "%hhx", &a);
         b_write(adr+i, a);
     }
 
+}
+
+void run(){
+    
+    pc = 01000;
+    while(1) {
+        
+        word w = word_read(pc);
+        w = 0;
+        printf("%06o %06o: ", pc, w);
+        pc+=2;
+        int i = 0;
+        while ((w & cmd[i].mask) != cmd[i].opcode) {
+            i++;
+        }
+        printf("%s", cmd[i].name);
+        cmd[i].do_func();
+    }
+}
+
+
+int main(int argc, char * argv[]) {
+    
+    if (argc == 2) {
+        load_file(argv[1]);
+    }
+//    test_mem();
+    return 0;
 }

@@ -1,7 +1,10 @@
+
 #include <stdio.h>
-#include <assert.h>
 #include <stdlib.h>
-#include "pdp-11.h"
+#include <string.h>
+#include <errno.h>
+#include <assert.h>
+#include <stdarg.h>
 #include "do_func.c"
 
 #define MEMSIZE (64*1024)
@@ -12,6 +15,7 @@
 byte mem[MEMSIZE];
 word reg[8];
 
+int trace_flag = 0;
 
 
 
@@ -65,7 +69,7 @@ word word_read(Adress a) {
     
     word w = ((word)mem[a+1]) << 8;
     w = w | mem[a];
-    printf("w = 0%x\n", w);
+
     
     return w;
         
@@ -78,48 +82,89 @@ void word_write(Adress adr, word w)
 }
 
 
-void load_file(const char * filename) {
-    
-    
-    int adress, num;
-    Adress adr, n;
-    byte a;
-    FILE *data;
-    data = fopen(filename, "r");
-    fscanf(data,"%d %d", &adress, &num);
-    adr = (Adress) adress;
-    n = (Adress) num;
-    for (Adress i = 0; i < n; i++){
-        fscanf(data, "%hhx", &a);
-        b_write(adr+i, a);
+//void load_file(const char * filename) {
+//
+//
+//    int adress, num;
+//    Adress adr, n;
+//    byte a;
+//    FILE *data;
+//    data = fopen(filename, "r");
+//    fscanf(data,"%d %d", &adress, &num);
+//    adr = (Adress) adress;
+//    n = (Adress) num;
+//    for (Adress i = 0; i < n; i++){
+//        fscanf(data, "%hhx", &a);
+//        b_write(adr+i, a);
+//    }
+//
+//}
+
+void load_file(const char *file) {
+    Adress a, n;
+    byte k;
+
+    FILE *f = fopen(file, "r");
+    if (f == NULL) {
+        perror(file);
+        exit(1);
     }
 
+    while (fscanf(f, "%hx%hx", &a, &n) != EOF) {
+        for (Adress i = 0; i < n; i++) {
+            fscanf(f, "%hhx", &k);
+            b_write(a + i, k);
+        }
+    }
+    fclose(f);
 }
-
 void run(){
-    
+    trace("----------running-----------\n");
     pc = 01000;
     while(1) {
         
         word w = word_read(pc);
-        w = 0;
-        printf("%06o %06o: ", pc, w);
+        trace("%06o %06o: ", pc, w);
         pc+=2;
         int i = 0;
         while ((w & cmd[i].mask) != cmd[i].opcode) {
             i++;
         }
-        printf("%s", cmd[i].name);
+        trace("%s\t\n", cmd[i].name);
         cmd[i].do_func();
     }
 }
 
+void usage(const char *progname) {
+    fprintf(stderr, "USAGE: %s [-t] FILE\n ", progname);
+    fprintf(stderr, "\t-t - trace on\n ");
+}
 
-int main(int argc, char * argv[]) {
-    
-    if (argc == 2) {
-        load_file(argv[1]);
+void trace(char * format, ...) {
+    if (trace_flag) {
+        va_list ptr;
+        va_start(ptr, format);
+        vfprintf(stderr, format, ptr);
+        va_end(ptr);
     }
-//    test_mem();
+}
+int main(int argc, char * argv[]) {
+    if (argc == 1) {
+        usage(argv[0]);
+        return 1;
+    }
+    for (int i = 1; i < argc; ++i) {
+        if (argv[i][0] == '-') {
+            if (argv[i][1] == 't'){
+                trace_flag = 1;
+            }else {
+                usage(argv[0]);
+                return 1;
+            }
+        } else
+            load_file(argv[i]);
+    }
+    trace("\n");
+    run();
     return 0;
 }

@@ -1,22 +1,7 @@
-typedef unsigned char byte;                     //8 bit
-typedef unsigned short int word;                //16 bit
-typedef word Adress;                            //16 bit
-
-
-typedef struct {
-    word mask;
-    word opcode;
-    char * name;
-    word params;
-    void (*do_func)(void);
-} Command;
-
-typedef struct {
-    word val;
-    Adress adr;
-}ss,dd;
-
-
+#ifndef MY_PDP_11_EMULATOR_DO_FUNCTIONS_H
+#define MY_PDP_11_EMULATOR_DO_FUNCTIONS_H
+#define pc reg[7]
+#define sp reg[6]
 #define LEN_DD 6
 #define LEN_SS 6
 #define LEN_NN 6
@@ -30,25 +15,35 @@ typedef struct {
 #define POSITION_B 15
 #define LEN_BYTE 8
 #define LEN_WORD 16
+#define MEMSIZE 64*1024
 #define LEN_BYTE 8
 #define LEN_WORD 16
+typedef unsigned char byte;
+typedef unsigned short int word;
+typedef word adr;
 
 
+typedef struct {
+    word mask;
+    word opcode;
+    char * name;
+    word params;
+    void (*do_func) (void);
+} Command;
 
-void b_write(Adress adr, byte b);
-byte b_read(Adress adr);
-void word_write(Adress adr, word w);
-word word_read(Adress adr);
-void load_file(const char * filename);
-void run(void);
-void test_mem(void);
-void trace(char * format, ...);
+typedef struct
+{
+    word val;    // значение аргумента
+    word adr;    // адрес аргумента
+} Arg;
+
 void do_halt(void);
 void do_mov(void);
 void do_add(void);
 void do_nothing(void);
 void do_sob(void);
 void do_clr(void);
+
 void do_ccc(void);
 void do_scc(void);
 void do_tst(void);
@@ -61,11 +56,22 @@ void do_sen(void);
 void do_sez(void);
 void do_sev(void);
 void do_sec(void);
-
 void set_C(int val);
 void set_NZ(word val);
 
 void do_br(void);
 void do_beq(void);
+void do_bpl(void);
 
+void do_tst(void);
+void do_jsr(void);
+void do_rts(void);
 
+void run(void);
+void trace(char * format, ...);
+byte b_read (adr a);
+word w_read (adr a);
+void b_write (adr a, byte val);
+void w_write (adr a, word val);
+void print_reg();
+#endif //MY_PDP_11_EMULATOR_DO_FUNCTIONS_H
